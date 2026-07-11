@@ -11,7 +11,7 @@ Your job is to create a pull request for the current changes following the repos
 
 ## Reference Rules
 
-If the project has `.agents/rules/branch-naming-conventions.md` (or the Cursor adapter `.cursor/rules/branch-naming-conventions.mdc`), use it as the source of truth; otherwise use the branch naming conventions defined in this skill (see Step 3).
+Branch naming and base-branch policy lives in [references/branch-naming-conventions.md](references/branch-naming-conventions.md). If the project has `.agents/rules/branch-naming-conventions.md` (or the Cursor adapter `.cursor/rules/branch-naming-conventions.mdc`), it overrides those defaults. Never push directly to `main`; create a branch and open a PR.
 
 ## Pre-Flight Checks
 

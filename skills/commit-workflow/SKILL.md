@@ -11,7 +11,8 @@ Authoritative workflow for preparing commits with Conventional Commits, split-fi
 
 ## Source of truth
 
-- If the project has `.agents/rules/commit-best-practices.md` (or the Cursor adapter `.cursor/rules/commit-best-practices.mdc`), follow it for commit policy; otherwise use the defaults in this skill.
+- Commit policy (types, format, body rules, footers) lives in [references/commit-best-practices.md](references/commit-best-practices.md) — read it before drafting messages.
+- If the project has `.agents/rules/commit-best-practices.md` (or the Cursor adapter `.cursor/rules/commit-best-practices.mdc`), it overrides those defaults.
 - Use this skill for process and decision flow.
 
 ## Use when
@@ -69,10 +70,11 @@ For each commit candidate:
 - Subject <= 72 characters
 - Imperative mood, lowercase
 - Body optional but recommended when why is not obvious
-- When including a body, if the project has `.agents/rules/commit-best-practices.md`,
-  follow it; otherwise use these defaults: only hyphen-space markdown bullets (even
-  for one item); <= 72 characters per line with indented wraps as needed; never
-  prose paragraphs or naked sentences without bullets
+- When including a body, follow the body rules in
+  [references/commit-best-practices.md](references/commit-best-practices.md)
+  (or the project's own commit rule if it has one): only hyphen-space markdown
+  bullets (even for one item); <= 72 characters per line with indented wraps as
+  needed; never prose paragraphs or naked sentences without bullets
 
 If uncertain about type, scope, or split boundaries, ask concise clarification.
 
@@ -128,4 +130,5 @@ Use this structure when proposing:
 
 ## Additional resources
 
+- Commit policy: [references/commit-best-practices.md](references/commit-best-practices.md)
 - Examples: [examples.md](examples.md)
