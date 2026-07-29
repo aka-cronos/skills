@@ -1,44 +1,34 @@
 ---
 name: commit-workflow
-description: Analyzes staged git changes, proposes Conventional Commit messages, and runs a confirmation-first commit workflow. Defaults to split-commit recommendations when staged files span multiple logical concerns. Use when the user asks to commit, write a commit message, review staged changes, or split commits.
+description: Commits staged changes as atomic Conventional Commits, splitting when the staged diff spans multiple concerns and gating each commit on explicit approval. Use when the user asks to commit or wants a commit message drafted, when deciding whether changes should be split across commits, or when another skill needs a commit made.
 metadata:
   author: aka-cronos
 ---
 
 # Commit Workflow
 
-Authoritative workflow for preparing commits with Conventional Commits, split-first behavior, and explicit user confirmation.
+Every commit is **atomic**: one logical concern, one message, one gate.
 
 ## Source of truth
 
-- Commit policy (types, format, body rules, footers) lives in [references/commit-best-practices.md](references/commit-best-practices.md) — read it before drafting messages.
-- If the project has `.agents/rules/commit-best-practices.md` (or the Cursor adapter `.cursor/rules/commit-best-practices.mdc`), it overrides those defaults.
-- Use this skill for process and decision flow.
-
-## Use when
-
-Use this skill when at least one applies:
-
-- User asks to commit staged changes.
-- User asks for a commit message based on staged diff.
-- User asks whether changes should be split across commits.
-- User runs `/commit` or asks for a commit workflow.
+Commit policy — types, subject format, body rules, footers — lives in
+[references/commit-best-practices.md](references/commit-best-practices.md). Read it before
+drafting any message. If the project ships `.agents/rules/commit-best-practices.md` (or the
+Cursor adapter `.cursor/rules/commit-best-practices.mdc`), that file overrides these defaults.
 
 ## Workflow
 
 ### Step 1: Inspect staged state
 
-Run:
+Run `git status --short`, `git diff --cached --name-only`, and `git diff --cached --stat`.
 
-- `git status --short`
-- `git diff --cached --name-only`
-- `git diff --cached --stat`
+If nothing is staged, report it and stop.
 
-If no staged changes exist, report it and stop.
+**Done when:** you have the full list of staged files and the diffstat.
 
-### Step 2: Detect logical concerns
+### Step 2: Group by concern
 
-Classify staged files into concern groups, for example:
+Assign every staged file to a concern group. Common groups:
 
 - docs (`docs/**`, `README*`)
 - tooling/config (`.cursor/**`, `.agents/**`, `.github/**`, config files)
@@ -47,88 +37,69 @@ Classify staged files into concern groups, for example:
 - backend/data (`**/convex/**`, `db/**`, migrations)
 - tests (`**/*.test.*`, `tests/**`)
 
-Use best judgment if files do not match these examples.
+Files that fit none of these get a group by best judgment — read the diff when the path alone
+is ambiguous.
 
-### Step 3: Split-first decision
+**Done when:** every staged file belongs to exactly one group, with none left unassigned.
 
-If more than one concern group is present:
+### Step 3: Recommend the split
 
-1. Recommend split commits first.
-2. Propose group boundaries and commit order.
-3. Draft one message per proposed commit.
-4. Ask the user to choose:
-  - split now, or
-  - proceed as one commit.
+With more than one group present, an atomic commit per group is the recommendation:
 
-If only one concern group is present, continue with single-commit flow.
+1. Propose the group boundaries and the commit order.
+2. Draft one message per proposed commit.
+3. Let the user choose: split now, or one commit for everything.
 
-### Step 4: Draft commit message(s)
+The user's answer decides. With a single group, go straight to the single-commit flow.
 
-For each commit candidate:
+**Done when:** the user has picked a path, or only one group existed.
 
-- Subject format: `type(scope): short summary`
-- Subject <= 72 characters
-- Imperative mood, lowercase
-- Body optional but recommended when why is not obvious
-- When including a body, follow the body rules in
-  [references/commit-best-practices.md](references/commit-best-practices.md)
-  (or the project's own commit rule if it has one): only hyphen-space markdown
-  bullets (even for one item); <= 72 characters per line with indented wraps as
-  needed; never prose paragraphs or naked sentences without bullets
+### Step 4: Draft the message(s)
 
-If uncertain about type, scope, or split boundaries, ask concise clarification.
+Subject: `type(scope): short summary`. Body when the *why* is not obvious from the diff,
+formatted per the commit policy above.
+
+Ask a concise clarifying question when type, scope, or a split boundary is genuinely
+ambiguous.
+
+**Done when:** each commit candidate has a message that satisfies the policy file.
 
 ### Step 5: Run quality checks
 
-Prefer project scripts and only run checks that exist:
+Detect the package manager from the `packageManager` field in `package.json`, falling back to
+the lockfile (`pnpm-lock.yaml` → pnpm, `yarn.lock` → yarn, `bun.lock*` → bun,
+`package-lock.json` → npm). Then run only the scripts that exist in `package.json`:
+`lint`, `typecheck`, `format`, `test`, `build`.
 
-- `pnpm lint`
-- `pnpm typecheck`
-- `pnpm format` (if script exists)
-- `pnpm test` (if script exists)
-- `pnpm build` (if script exists)
+Report each script as passed, failed, or absent. On any failure, ask whether to proceed.
 
-If checks fail or a script does not exist, report status clearly and ask whether to proceed.
+**Done when:** each of the five scripts is reported as passed, failed, or absent.
 
-### Step 6: Confirmation gate (required)
+### Step 6: Confirmation gate
 
-Before each commit, always show:
+Before each commit, show:
 
-1. Full commit message
-2. Commit preview (`git diff --cached --stat` or split-specific preview)
-3. Explicit prompt: `Do you want to proceed with this commit? (yes/no)`
+1. The full commit message.
+2. The commit preview (`git diff --cached --stat`, or the staged subset for a split).
+3. The prompt: `Do you want to proceed with this commit? (yes/no)`
 
-Do not run `git commit` without explicit approval.
+**Done when:** the user has answered yes. Run `git commit` only after that answer.
 
 ### Step 7: Commit and verify
 
-After explicit approval:
+Create the commit, then confirm it with `git log -1 --oneline` and `git show --stat HEAD`.
 
-1. Create commit.
-2. Verify with `git log -1 --oneline`.
-3. Show details with `git show --stat HEAD`.
+In a split flow, repeat steps 6 and 7 for each commit in the proposed order.
 
-For split flow, repeat confirmation and verification for each commit in sequence.
+**Done when:** every approved commit exists and has been verified.
 
 ## Guardrails
 
-- Never commit likely secrets (`.env*`, credentials, token files).
-- Never run destructive git commands unless explicitly requested.
-- Never amend a commit unless explicitly requested.
-- Do not force a split; recommend it and let user decide.
+- Keep secrets out of commits — `.env*`, credential files, token files.
+- Recommend the split; the user decides whether to take it.
+- Treat destructive git commands and `--amend` as opt-in: run them only when the user asks.
 
-## Output format
+## Examples
 
-Use this structure when proposing:
-
-1. Staged summary
-2. Concern grouping
-3. Recommended path (split or single)
-4. Draft message(s)
-5. Check status
-6. Confirmation question
-
-## Additional resources
-
-- Commit policy: [references/commit-best-practices.md](references/commit-best-practices.md)
-- Examples: [examples.md](examples.md)
+[examples.md](examples.md) walks a mixed-concern split and a single-concern commit end to end.
+Read it when a split boundary or a draft message is hard to pin down.
