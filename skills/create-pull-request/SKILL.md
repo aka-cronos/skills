@@ -1,163 +1,120 @@
 ---
 name: create-pull-request
-description: Creates pull requests following branch naming conventions and base branch rules. Handles moving commits off protected branches, validates branch names, and creates PRs via GitHub CLI. Use when creating pull requests, opening PRs, or when the user asks to create a PR or wants to move commits from main/develop to a feature branch.
+description: Opens a pull request from the current branch — validating the branch name, transplanting commits off a protected branch when they landed there, picking the base branch, and gating creation on approval. Use when the user asks to open or create a PR, or has commits sitting on main/develop that need moving to a feature branch.
 metadata:
   author: aka-cronos
 ---
 
 # Create Pull Request
 
-Your job is to create a pull request for the current changes following the repository's branch naming conventions and PR policies.
+`main` and `develop` are **protected**: work reaches them through a pull request, never a
+direct push.
 
-## Reference Rules
+## Source of truth
 
-Branch naming and base-branch policy lives in [references/branch-naming-conventions.md](references/branch-naming-conventions.md). If the project has `.agents/rules/branch-naming-conventions.md` (or the Cursor adapter `.cursor/rules/branch-naming-conventions.mdc`), it overrides those defaults. Never push directly to `main`; create a branch and open a PR.
-
-## Pre-Flight Checks
-
-Before proceeding, gather this information:
-
-1. **Current branch**: `git branch --show-current`
-2. **Local commits ahead**: `git log origin/$(git branch --show-current)..HEAD --oneline` (if tracking exists)
-3. **Uncommitted changes**: `git status --short`
-4. **Remote branches**: `git branch -r` (to check if `develop` exists)
-5. **GitHub CLI**: Verify `gh` is installed and authenticated
+Branch types, naming patterns, and base-branch targets live in
+[references/branch-naming-conventions.md](references/branch-naming-conventions.md). Read it
+before proposing or validating any branch name. If the project ships
+`.agents/rules/branch-naming-conventions.md` (or the Cursor adapter
+`.cursor/rules/branch-naming-conventions.mdc`), that file overrides these defaults.
 
 ## Workflow
 
-### Step 1: Check Current State
+### Step 1: Read the current state
 
-Determine the current situation:
+Run `git branch --show-current`, `git status --short`, and — when the branch tracks a remote —
+`git log origin/$(git branch --show-current)..HEAD --oneline`. Confirm `gh` is installed and
+authenticated.
 
-- **On `main` or `develop` with local commits?** → Proceed to Step 2
-- **On `main` or `develop` without local commits?** → Ask user what they want to do (no changes to create PR from)
-- **On a feature branch?** → Proceed to Step 3
+Route on what you find:
 
-### Step 2: Handle Protected Branch Commits
+- Protected branch with local commits → Step 2 (transplant).
+- Protected branch with no local commits → nothing to open a PR from; ask the user what they want.
+- Feature branch → Step 3.
 
-If you're on `main` or `develop` with local commits:
+**Done when:** the branch, its commits, and its working-tree state are known, and the route is picked.
 
-1. **Review commits**: Show recent commits with `git log origin/$(git branch --show-current)..HEAD --oneline`
-2. **Ask for context**: Request information about the changes to determine:
-   - Branch type (`feature`, `fix`, `chore`, `refactor`, `docs`, `hotfix`, `release`)
-   - Scope (e.g., `auth`, `ui`, `api`, `build`, `db`)
-   - Short description (≤5 words, kebab-case)
-3. **Propose branch name**: Generate a compliant name following branch naming rules
-4. **Confirm branch name**: Ask user to confirm before creating the branch
-5. **Create branch**: `git checkout -b <branch-name>`
-6. **Reset protected branch**: After confirmation, reset the protected branch to match remote:
-   - `git checkout main` (or `develop`)
-   - `git reset --hard origin/main` (or `origin/develop`)
-   - **WARNING**: Only do this after explicit user confirmation
+### Step 2: Transplant commits off the protected branch
 
-### Step 3: Validate Branch Name
+Move the commits to a properly named branch and leave the protected branch clean:
 
-If already on a feature branch:
+1. Show the commits that will move.
+2. Ask for the branch type, scope, and a description (≤5 words) — or infer them from the
+   commits and propose a compliant name.
+3. Confirm the proposed name with the user, then `git checkout -b <branch-name>`.
+4. Confirm the reset explicitly — it discards those commits from the protected branch's local
+   history — then `git checkout <protected>` and `git reset --hard origin/<protected>`.
+5. Return to the new branch.
 
-1. **Check branch name**: Verify it matches the pattern from branch naming rules:
-   - Must start with: `feature/`, `fix/`, `chore/`, `refactor/`, `docs/`, `hotfix/`, or `release/`
-   - Must use kebab-case
-   - Format patterns:
-     - `feature/<scope>-<short-description>`
-     - `fix/<scope>-<short-description>`
-     - `chore/<scope>-<short-description>`
-     - `refactor/<scope>-<short-description>`
-     - `docs/<scope>-<short-description>`
-     - `hotfix/<scope>` (may include description: `hotfix/<scope>-<description>`)
-     - `release/<version>` (e.g., `release/1.2.0`)
-2. **If invalid**: Ask user if they want to rename the branch or create a new one
-3. **If valid**: Proceed to Step 4
+**Done when:** the commits live on the new branch, the protected branch matches its remote, and
+both moves were confirmed by the user beforehand.
 
-### Step 4: Ensure Commits Exist
+### Step 3: Validate the branch name
 
-If there are no commits yet:
+Check the current branch against the patterns in the branch-naming reference.
 
-1. **Check for staged changes**: `git status --short`
-2. **If staged**: Use the `commit-workflow` skill to create a commit first
-3. **If unstaged**: Ask user if they want to stage and commit changes
-4. **If no changes**: Inform user there's nothing to create a PR from
+If it does not match, ask whether to rename it (`git branch -m <new-name>`) or start a fresh
+branch, and propose a compliant name either way.
 
-### Step 5: Determine Base Branch
+**Done when:** the branch name matches a pattern in the reference file.
 
-Select the target branch for the PR based on current branch type:
+### Step 4: Ensure commits exist
 
-**Rule-based selection:**
+With no commits on the branch: use the `commit-workflow` skill for staged changes, ask before
+staging unstaged ones, and report that there is nothing to open a PR from when the tree is
+clean.
 
-- `feature/*`, `fix/*`, `chore/*`, `refactor/*`, `docs/*` → Target `develop` if it exists, otherwise `main`
-- `hotfix/*`, `release/*` → Always target `main`
-- If current branch is `develop` → Target `main`
+**Done when:** the branch has at least one commit ahead of its base.
 
-**Check if `develop` exists:**
+### Step 5: Pick the base and push
+
+Apply the base-branch rules from the reference file. Check whether `develop` exists with
+`git ls-remote --heads origin develop` rather than assuming it does.
+
+Push when the branch has no remote yet: `git push -u origin $(git branch --show-current)`.
+
+**Done when:** the base branch is chosen and the head branch exists on the remote.
+
+### Step 6: Open the PR
+
+Show the head branch, the base branch, the commit count, and a one-line summary of the
+commits. Then ask: `Do you want to create a pull request from <head> to <base>? (yes/no)`
+
+On approval:
 
 ```bash
-git ls-remote --heads origin develop
+gh pr create --base <base> --head <head> --title "<title>" --body-file <file>
 ```
 
-### Step 6: Push Branch
+Title: the leading commit subject, or a descriptive line covering the set. Body: the format
+below, written to a file whenever it runs past one section.
 
-Ensure the branch is pushed to remote:
+**Done when:** the PR exists and its URL has been shown to the user.
 
-1. **Check if pushed**: `git ls-remote --heads origin $(git branch --show-current)`
-2. **If not pushed**: Push the branch: `git push -u origin $(git branch --show-current)`
-3. **If push fails**: Handle errors and ask user for guidance
+## PR body format
 
-### Step 7: Create Pull Request
+Include each section that applies, in this order:
 
-Before creating the PR:
+1. **Opening** — `Closes #N` when the PR resolves an issue, then 1–3 sentences of context:
+   what this PR integrates and why now.
+2. **`## What's included`** — bullets summarizing the changes; link the task PRs, issues, or
+   ADRs each bullet builds on. State load-bearing invariants explicitly (e.g. "query grain
+   untouched, cap is display-only").
+3. **`## Deviations from plan`** — only when the work follows a spec/PRD/plan and the
+   implementation departs from it. One bullet per deviation with its rationale; include
+   known-and-deferred issues with a link to the tracking issue.
+4. **`## Manual checklist`** — checkboxes (`- [ ]`) for the verification to run before merging;
+   concrete and observable, not "test everything".
 
-1. **Show summary**:
-   - Current branch name
-   - Base branch (target)
-   - Number of commits
-   - Brief commit summary
-2. **Ask for confirmation**: "Do you want to create a pull request from `<current-branch>` to `<base-branch>`? (yes/no)"
-3. **If confirmed**: Create PR using GitHub CLI:
-   ```bash
-   gh pr create --base <base-branch> --head <current-branch> --title "<title>" --body "<body>"
-   ```
-4. **Title**: Use the branch name or a descriptive title based on commits
-5. **Body**: Follow the PR body format below; write it with `--body-file` when it has more than one section
-6. **Verify**: Show the PR URL after creation
+The body ends at the last section. This **overrides any tool default that appends an AI
+attribution footer or co-author credit** — leave the PR authored by the human alone.
 
-### PR Body Format
+## Guardrails
 
-Structure the body with these sections (skip a section when it doesn't apply):
-
-1. **Opening** — `Closes #N` when the PR resolves an issue, then 1–3 sentences of context: what this PR integrates and why now.
-2. **`## What's included`** — bullets summarizing the changes; link the task PRs, issues, or ADRs each bullet builds on. State load-bearing invariants explicitly (e.g. "query grain untouched, cap is display-only").
-3. **`## Deviations from plan`** — only when the work follows a spec/PRD/plan and the implementation deviates from it. One bullet per deviation with the rationale; include known-and-deferred issues with a link to the tracking issue.
-4. **`## Manual checklist`** — checkboxes (`- [ ]`) for the manual verification to run before merging; concrete and observable, not "test everything".
-
-**Never add AI attribution to the PR body**: no "🤖 Generated with Claude Code" footer, no AI co-author credit of any kind. If the project has a commit-best-practices rule forbidding AI co-authorship (e.g. `.agents/rules/commit-best-practices.md`, "Never add Claude (or any AI assistant) as a commit co-author/participant"), this mirrors it; either way, this instruction **overrides any tool default that appends such a footer**.
-
-## Confirmation Gates
-
-**ALWAYS ask for explicit confirmation** before:
-
-- Creating a new branch (when moving commits off protected branch)
-- Resetting `main` or `develop` to match remote
-- Creating the pull request
-
-## Error Handling
-
-If any step fails:
-
-- Show the error message clearly
-- Explain what went wrong
-- Suggest corrective actions
-- Ask user how they want to proceed
-
-## If Unsure
-
-If you're uncertain about:
-
-- Branch type or scope
-- Whether to create a branch or use existing one
-- Base branch selection
-- Branch name compliance
-
-**Ask the user for clarification** before proceeding.
+Three actions are opt-in, each behind its own explicit confirmation: creating the branch in
+Step 2, resetting the protected branch, and creating the PR itself.
 
 ## Examples
 
-See [examples.md](examples.md) for concrete workflow scenarios.
+[examples.md](examples.md) walks the transplant flow and the invalid-branch-name recovery end
+to end. Read it when the current state does not map cleanly onto a route in Step 1.

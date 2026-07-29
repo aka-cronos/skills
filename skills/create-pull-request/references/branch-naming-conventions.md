@@ -31,6 +31,7 @@
 - `release/*` branches target `main`.
 - `hotfix/*` branches target `main`.
 - `feature/*`, `fix/*`, `chore/*`, `refactor/*`, and `docs/*` target `develop` when it exists; otherwise target `main`.
+- `develop` itself targets `main`.
 
 ## Agent Behavior
 
