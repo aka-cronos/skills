@@ -12,5 +12,5 @@ npx skills@latest add aka-cronos/skills
 
 ## Skills
 
-- **commit-workflow** — analyzes staged git changes, proposes Conventional Commit messages, and runs a confirmation-first commit workflow with split-commit recommendations.
-- **create-pull-request** — creates pull requests following branch naming conventions and base-branch rules, handling moves off protected branches and PR body formatting.
+- **commit-workflow** — commits staged changes as atomic Conventional Commits, splitting by concern and gating each commit on explicit approval.
+- **create-pull-request** — opens pull requests against the right base branch, transplanting commits off protected branches and enforcing the PR body format.
