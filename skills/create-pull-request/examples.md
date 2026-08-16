@@ -3,7 +3,7 @@
 ## Example 1: Transplanting commits off `main`
 
 **State:** on `main`, two commits ahead of `origin/main` — "feat(auth): add login form" and
-"feat(auth): add validation". `develop` exists.
+"feat(auth): add validation".
 
 **Run:**
 
@@ -12,7 +12,7 @@
 3. Ask: "Reset `main` to `origin/main`? This discards those commits from local `main`.
    (yes/no)" → confirm → `git checkout main && git reset --hard origin/main`.
 4. `git checkout feature/auth-login-form && git push -u origin feature/auth-login-form`.
-5. Base: `feature/*` with `develop` present → `develop`.
+5. Base is `main`.
 6. Confirm, then create with this body file:
 
    ```markdown

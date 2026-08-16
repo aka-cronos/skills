@@ -1,6 +1,9 @@
 ---
 name: commit-workflow
-description: Commits staged changes as atomic Conventional Commits, splitting when the staged diff spans multiple concerns and gating each commit on explicit approval. Use when the user asks to commit or wants a commit message drafted, when deciding whether changes should be split across commits, or when another skill needs a commit made.
+description: >-
+  Commit: use when the user asks to commit, wants a commit message
+  drafted, is deciding whether staged changes should be split, or
+  another skill needs a commit made.
 metadata:
   author: aka-cronos
 ---
@@ -56,8 +59,8 @@ The user's answer decides. With a single group, go straight to the single-commit
 
 ### Step 4: Draft the message(s)
 
-Subject: `type(scope): short summary`. Body when the *why* is not obvious from the diff,
-formatted per the commit policy above.
+Subject: `type(scope): short summary`. Body when the *why* is not obvious from the diff:
+**bullets**, formatted per the commit policy.
 
 Ask a concise clarifying question when type, scope, or a split boundary is genuinely
 ambiguous.
@@ -96,7 +99,6 @@ In a split flow, repeat steps 6 and 7 for each commit in the proposed order.
 ## Guardrails
 
 - Keep secrets out of commits — `.env*`, credential files, token files.
-- Recommend the split; the user decides whether to take it.
 - Treat destructive git commands and `--amend` as opt-in: run them only when the user asks.
 
 ## Examples
