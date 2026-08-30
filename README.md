@@ -12,5 +12,5 @@ npx skills@latest add aka-cronos/skills
 
 ## Skills
 
-- **commit-workflow** — commits staged changes as atomic Conventional Commits, splitting by concern and gating each commit on explicit approval.
+- **commit-workflow** — commits staged changes as atomic Conventional Commits, one commit per concern.
 - **create-pull-request** — opens a pull request against main, transplanting commits off the trunk and enforcing the PR body format.
