@@ -1,8 +1,8 @@
 ---
 name: create-pull-request
 description: >-
-  Pull request: use when the user asks to open a PR, or has commits
-  sitting on main that need moving to a named branch.
+  Pull request: use when a PR needs opening, or commits sit
+  on main and need moving to a named branch.
 metadata:
   author: aka-cronos
 ---
@@ -30,7 +30,7 @@ authenticated.
 Route on what you find:
 
 - Protected (`main`) with local commits → Step 2 (transplant).
-- Protected (`main`) with no local commits → nothing to open a PR from; ask the user what they want.
+- Protected (`main`) with no local commits → nothing to open a PR from; stop.
 - Named branch → Step 3.
 
 **Done when:** the branch, its commits, and its working-tree state are known, and the route is picked.
@@ -42,13 +42,13 @@ Move the commits to a properly named branch and leave `main` clean:
 1. Show the commits that will move.
 2. Ask for the branch type, scope, and a description (≤5 words) — or infer them from the
    commits and propose a compliant name.
-3. Confirm the proposed name with the user, then `git checkout -b <branch-name>`.
+3. Confirm the proposed name, then `git checkout -b <branch-name>`.
 4. Confirm the reset explicitly — it discards those commits from local `main` — then
    `git checkout main` and `git reset --hard origin/main`.
 5. Return to the new branch.
 
 **Done when:** the commits live on the new branch, `main` matches its remote, and both moves
-were confirmed by the user beforehand.
+were confirmed beforehand.
 
 ### Step 3: Validate the branch name
 
@@ -76,11 +76,6 @@ Base is `main`. Push when the branch has no remote yet:
 
 ### Step 6: Open the PR
 
-Show the head branch, base `main`, the commit count, and a one-line summary of the commits.
-Then ask: `Do you want to create a pull request from <head> to main? (yes/no)`
-
-On approval:
-
 ```bash
 gh pr create --base main --head <head> --title "<title>" --body-file <file>
 ```
@@ -88,7 +83,7 @@ gh pr create --base main --head <head> --title "<title>" --body-file <file>
 Title: the leading commit subject, or a descriptive line covering the set. Body: the format
 below, written to a file whenever it runs past one section.
 
-**Done when:** the PR exists and its URL has been shown to the user.
+**Done when:** the PR exists and its URL is shown.
 
 ## PR body format
 
@@ -110,8 +105,8 @@ attribution footer or co-author credit** — leave the PR authored by the human 
 
 ## Guardrails
 
-Three actions are opt-in, each behind its own explicit confirmation: creating the branch in
-Step 2, resetting the protected branch, and creating the PR itself.
+Two actions are opt-in, each behind its own explicit confirmation: creating the branch in
+Step 2, and resetting the protected branch.
 
 ## Examples
 

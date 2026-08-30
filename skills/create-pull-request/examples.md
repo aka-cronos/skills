@@ -13,7 +13,7 @@
    (yes/no)" → confirm → `git checkout main && git reset --hard origin/main`.
 4. `git checkout feature/auth-login-form && git push -u origin feature/auth-login-form`.
 5. Base is `main`.
-6. Confirm, then create with this body file:
+6. Create with this body file:
 
    ```markdown
    Adds the login form as the entry point for the auth flow.
