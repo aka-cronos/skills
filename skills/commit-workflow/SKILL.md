@@ -1,16 +1,15 @@
 ---
 name: commit-workflow
 description: >-
-  Commit: use when the user asks to commit, wants a commit message
-  drafted, is deciding whether staged changes should be split, or
-  another skill needs a commit made.
+  Commit: use when a commit needs making, a commit message
+  needs drafting, or another skill needs a commit made.
 metadata:
   author: aka-cronos
 ---
 
 # Commit Workflow
 
-Every commit is **atomic**: one logical concern, one message, one gate.
+Every commit is **atomic**: one logical concern, one message.
 
 ## Source of truth
 
@@ -45,17 +44,12 @@ is ambiguous.
 
 **Done when:** every staged file belongs to exactly one group, with none left unassigned.
 
-### Step 3: Recommend the split
+### Step 3: Split by concern
 
-With more than one group present, an atomic commit per group is the recommendation:
+One atomic commit per group. With more than one group, set the boundaries and the commit
+order. With a single group, one commit.
 
-1. Propose the group boundaries and the commit order.
-2. Draft one message per proposed commit.
-3. Let the user choose: split now, or one commit for everything.
-
-The user's answer decides. With a single group, go straight to the single-commit flow.
-
-**Done when:** the user has picked a path, or only one group existed.
+**Done when:** every group has a place in the commit order, none merged.
 
 ### Step 4: Draft the message(s)
 
@@ -78,28 +72,17 @@ Report each script as passed, failed, or absent. On any failure, ask whether to 
 
 **Done when:** each of the five scripts is reported as passed, failed, or absent.
 
-### Step 6: Confirmation gate
+### Step 6: Commit and verify
 
-Before each commit, show:
+For each group in order: leave only that group's files staged, `git commit`, then verify with
+`git log -1 --oneline` and `git show --stat HEAD`.
 
-1. The full commit message.
-2. The commit preview (`git diff --cached --stat`, or the staged subset for a split).
-3. The prompt: `Do you want to proceed with this commit? (yes/no)`
-
-**Done when:** the user has answered yes. Run `git commit` only after that answer.
-
-### Step 7: Commit and verify
-
-Create the commit, then confirm it with `git log -1 --oneline` and `git show --stat HEAD`.
-
-In a split flow, repeat steps 6 and 7 for each commit in the proposed order.
-
-**Done when:** every approved commit exists and has been verified.
+**Done when:** every group has a verified commit.
 
 ## Guardrails
 
 - Keep secrets out of commits — `.env*`, credential files, token files.
-- Treat destructive git commands and `--amend` as opt-in: run them only when the user asks.
+- Treat destructive git commands and `--amend` as opt-in: run them only when asked.
 
 ## Examples
 
