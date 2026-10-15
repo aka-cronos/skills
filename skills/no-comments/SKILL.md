@@ -81,8 +81,9 @@ When the root cause lies outside the scope, land the smallest in-scope fix and r
 rest open.
 
 Run the project's relevant checks (tests, type check, lint) after the fixes. When a flag on
-a deleted lint or type suppression ends open, restore that suppression so the checks stay
-green; the report carries the flag.
+a deleted lint or type suppression ends open and the checks fail on its line, restore that
+suppression and rerun them; the report carries the flag. A suppression the fix made unused
+stays deleted.
 
 **Done when:** every accepted `MUST KILL` is fixed in scope with the checks green, or
 reported open with its cause: out of scope, or verification failed or unavailable.
