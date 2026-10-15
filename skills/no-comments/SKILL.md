@@ -80,7 +80,9 @@ the code simpler than it found it; a symptom guard on the old shape is a new wee
 When the root cause lies outside the scope, land the smallest in-scope fix and report the
 rest open.
 
-Run the project's relevant checks (tests, type check, lint) after the fixes.
+Run the project's relevant checks (tests, type check, lint) after the fixes. When a flag on
+a deleted lint or type suppression ends open, restore that suppression so the checks stay
+green; the report carries the flag.
 
 **Done when:** every accepted `MUST KILL` is fixed in scope with the checks green, or
 reported open with its cause: out of scope, or verification failed or unavailable.
@@ -90,16 +92,18 @@ reported open with its cause: out of scope, or verification failed or unavailabl
 A **constraint comment** claims a rule: `do not remove`, `do not change wording`, `talk to
 X before changing`. Keep-list comments about things we cannot change stay. Every other
 constraint comment is already deleted; the reviewer's report carries the rule it claimed.
-For each, offer the cheapest in-scope enforcement: a type, a runtime check, a test, or a
-CI lint. Wait for the user to approve; an unattended run needs the caller's approval up
+Encode only rules that hold today. A claim Step 2 refuted is dropped, and one guarding a
+workaround under a `MUST KILL` is settled by its Step 3 fix; neither needs a check. For each
+remaining rule, offer the cheapest in-scope enforcement: a type, a runtime check, a test,
+or a CI lint. Wait for the user to approve; an unattended run needs the caller's approval up
 front.
 
 Approved: encode the rule, then run the new check and watch it pass. A failing or
 unrunnable check leaves the constraint open, reported with its cause. Declined: report the
 constraint as unenforced. Either way, the comment stays deleted.
 
-**Done when:** each constraint is kept under the keep list, encoded with a passing check,
-or reported open or unenforced with its claimed rule.
+**Done when:** each constraint is kept under the keep list, settled by Step 2 or Step 3,
+encoded with a passing check, or reported open or unenforced with its claimed rule.
 
 ### Step 5: Report
 
