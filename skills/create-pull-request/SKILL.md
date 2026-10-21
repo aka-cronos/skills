@@ -86,11 +86,17 @@ below, written to a file whenever it runs past one section.
 Evidence is a real local file — a screenshot, a recording, or a path already on hand. Reference
 it in the body by its local path (`![Login error state](./evidence/login.png)`) and pass that
 same path as `--attach`, once per file; `gh` uploads each one and rewrites the matching
-reference to the hosted asset. With no local media, omit `--attach`. The flag needs
-`gh` ≥ 2.99.0 and is refused alongside `--web`.
+reference to the hosted asset. The flag needs `gh` ≥ 2.99.0 and is refused alongside `--web`.
+Later evidence goes on a PR comment the same way: `gh pr comment <n> --body-file <file> --attach <path>`.
 
-**Done when:** the PR exists, its URL is shown, and every local media path in the body was
-passed as `--attach` — GitHub renders each asset, not a broken relative link.
+A UI change — anything a user can see: components, screens or routes, styles, copy — needs
+media. With none on hand, stop before `gh pr create` and capture it, or report that it is
+missing and why. Do not open the PR without it. Only a change with nothing visible omits
+`--attach`.
+
+**Done when:** the PR exists, its URL is shown, a UI change carries screenshots or a recording,
+and every local media path in the body was passed as `--attach` — GitHub renders each asset,
+not a broken relative link.
 
 ## PR body format
 
